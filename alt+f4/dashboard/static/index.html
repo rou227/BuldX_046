@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VantaCore // Threat Intelligence & Defense Operations</title>
+  
+  <!-- Modern Monospace Font Stack -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       1. DESIGN SYSTEM & ANTI-AI CSS VARIABLES
+       ========================================================================== */
+    :root {
+      --bg: #0B0E14;
+      --panel: #121824;
+      --panel-hover: #182030;
+      --glass-border: rgba(255, 255, 255, 0.07);
+      --glass-border-focus: rgba(94, 92, 230, 0.4);
+      --grid-line: rgba(255, 255, 255, 0.03);
+      
+      --text: #F0F4F8;
+      --muted: #8E9BAE;
+      --subtle: #526075;
+      
+      --kali: #5E5CE6;         /* Primary Kali Accent Glow */
+      --kali-glow: rgba(94, 92, 230, 0.25);
+      --warning: #FF9500;      /* Medium Alerts & Dry Run */
+      --warning-glow: rgba(255, 149, 0, 0.2);
+      --info: #64D2FF;         /* Target Meta & Info */
+      --info-glow: rgba(100, 210, 255, 0.2);
+      --safe: #30D158;         /* Nominal State */
+      --safe-glow: rgba(48, 209, 88, 0.2);
+      --alert: #FF453A;        /* Critical Attack / High Severity */
+      --alert-glow: rgba(255, 69, 58, 0.3);
+
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(94, 92, 230, 0.08) 0%, transparent 60%),
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
+      background-position: 0 0, -1px -1px, -1px -1px;
+    }
+
+    /* Animated Radar Scanning Line Background Overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 3px;
+      background: linear-gradient(90deg, transparent 0%, var(--kali) 50%, transparent 100%);
+      opacity: 0.4;
+      animation: radarScan 8s linear infinite;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    @keyframes radarScan {
+      0% { top: 0%; opacity: 0.1; }
+      50% { opacity: 0.5; }
+      100% { top: 100%; opacity: 0.1; }
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(11, 14, 20, 0.8);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--subtle);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--kali);
+    }
+
+    /* Layout Structure */
+    .app-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ==========================================================================
+       2. HEADER & NAVIGATION BAR
+       ========================================================================== */
+    .header {
+      background: var(--panel);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--kali) 0%, #3A3897 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px var(--kali-glow);
+    }
+
+    .brand-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: #FFF;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--text);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title span {
+      color: var(--kali);
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* Status Pill Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .status-badge.secure {
+      background: rgba(48, 209, 88, 0.1);
+      color: var(--safe);
+      border-color: rgba(48, 209, 88, 0.3);
+      box-shadow: 0 0 12px var(--safe-glow);
+    }
+
+    .status-badge.under_attack {
+      background: rgba(255, 69, 58, 0.15);
+      color: var(--alert);
+      border-color: rgba(255, 69, 58, 0.4);
+      box-shadow: 0 0 16px var(--alert-glow);
+      animation: pulseAlert 1.5s infinite alternate;
+    }
+
+    @keyframes pulseAlert {
+      from { box-shadow: 0 0 8px rgba(255, 69, 58, 0.2); }
+      to { box-shadow: 0 0 20px rgba(255, 69, 58, 0.6); }
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .target-pill {
+      background: rgba(100, 210, 255, 0.08);
+      color: var(--info);
+      border: 1px solid rgba(100, 210, 255, 0.2);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Buttons */
+    .btn {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--glass-border);
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: var(--panel-hover);
+      border-color: var(--glass-border-focus);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--kali);
+      color: #FFF;
+      border-color: var(--kali);
+      box-shadow: 0 0 12px var(--kali-glow);
+    }
+
+    .btn-primary:hover {
+      background: #4B49C8;
+      border-color: #4B49C8;
+      box-shadow: 0 0 18px var(--kali-glow);
+    }
+
+    .btn-warning {
+      background: var(--warning);
+      color: #000;
+      border-color: var(--warning);
+      box-shadow: 0 0 12px var(--warning-glow);
+    }
+
+    .btn-warning:hover {
+      background: #E08300;
+    }
+
+    /* ==========================================================================
+       3. TOP METRICS PANEL & SVG SEVERITY GAUGE
+       ========================================================================== */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr 340px;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* SVG Circular Gauge Container */
+    .gauge-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 0;
+      position: relative;
+    }
+
+    .gauge-svg {
+      width: 140px;
+      height: 140px;
+      transform: rotate(-90deg);
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.05);
+      stroke-width: 10;
+    }
+
+    .gauge-meter {
+      fill: none;
+      stroke: var(--safe);
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 345.5;  /* 2 * PI * r (55) */
+      stroke-dashoffset: 345.5;
+      transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.5s ease;
+    }
+
+    .gauge-value {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%);
+      text-align: center;
+    }
+
+    .gauge-number {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .gauge-label {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* Target Scanner Controls Form */
+    .scan-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      height: 100%;
+      justify-content: space-between;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-field {
+      background: rgba(11, 14, 20, 0.8);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .input-field:focus {
+      border-color: var(--kali);
+      box-shadow: 0 0 10px var(--kali-glow);
+    }
+
+    .key-health-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .key-tag {
+      font-size: 9px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 149, 0, 0.1);
+      color: var(--warning);
+      border: 1px solid rgba(255, 149, 0, 0.25);
+    }
+
+    /* Threat Category Grid & Bars */
+    .category-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .category-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .category-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+    }
+
+    .category-name {
+      color: var(--muted);
+    }
+
+    .category-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    .category-badge.NOMINAL { background: rgba(48, 209, 88, 0.15); color: var(--safe); }
+    .category-badge.WARN { background: rgba(255, 149, 0, 0.15); color: var(--warning); }
+    .category-badge.ALERT { background: rgba(255, 69, 58, 0.2); color: var(--alert); }
+
+    .category-bar-bg {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .category-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--safe);
+      border-radius: 2px;
+      transition: width 0.6s ease, background-color 0.4s ease;
+    }
+
+    /* ==========================================================================
+       4. EVENT LOG STREAM
+       ========================================================================== */
+    .events-panel {
+      min-height: 240px;
+    }
+
+    .events-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .events-stream {
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-right: 4px;
+    }
+
+    .event-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      background: rgba(11, 14, 20, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .event-time {
+      color: var(--subtle);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .event-tag {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .event-tag.SCAN { background: rgba(94, 92, 230, 0.2); color: var(--kali); }
+    .event-tag.FIREWALL { background: rgba(255, 149, 0, 0.2); color: var(--warning); }
+    .event-tag.SYSTEM { background: rgba(100, 210, 255, 0.2); color: var(--info); }
+
+    .event-msg {
+      color: var(--text);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .event-level {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .event-level.info { background: var(--info); }
+    .event-level.alert { background: var(--alert); box-shadow: 0 0 6px var(--alert); }
+
+    /* ==========================================================================
+       5. ON-DEMAND RECON DRAWER & CARDS
+       ========================================================================== */
+    .recon-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .recon-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .recon-card {
+      background: var(--panel);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 180px;
+      transition: all 0.2s ease;
+    }
+
+    .recon-card:hover {
+      border-color: var(--glass-border-focus);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .recon-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .recon-source-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .recon-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .recon-status-dot.ok { background: var(--safe); box-shadow: 0 0 6px var(--safe-glow); }
+    .recon-status-dot.fail { background: var(--alert); box-shadow: 0 0 6px var(--alert-glow); }
+
+    .recon-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .recon-metric-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+
+    .recon-metric-label {
+      color: var(--muted);
+    }
+
+    .recon-metric-val {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .tag-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--info);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+    }
+
+    .raw-note {
+      font-size: 9px;
+      color: var(--subtle);
+      background: rgba(11, 14, 20, 0.7);
+      padding: 6px 8px;
+      border-radius: 4px;
+      border-left: 2px solid var(--kali);
+      margin-top: 10px;
+      word-break: break-all;
+    }
+
+    /* Empty & NVD States */
+    .nvd-clean-state {
+      background: rgba(48, 209, 88, 0.05);
+      border: 1px dashed rgba(48, 209, 88, 0.2);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      color: var(--safe);
+      font-size: 11px;
+      margin-top: 8px;
+    }
+
+    .not-scanned-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--subtle);
+      font-size: 11px;
+      font-style: italic;
+      padding: 40px 0;
+    }
+
+    /* ==========================================================================
+       6. FIREWALL SECURITY ENGINE
+       ========================================================================== */
+    .firewall-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+    }
+
+    .firewall-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .toggle-input {
+      display: none;
+    }
+
+    .toggle-switch {
+      width: 36px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      position: relative;
+      transition: background 0.2s ease;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #FFF;
+      border-radius: 50%;
+      transition: transform 0.2s ease;
+    }
+
+    .toggle-input:checked + .toggle-switch {
+      background: var(--warning);
+    }
+
+    .toggle-input:checked + .toggle-switch::after {
+      transform: translateX(16px);
+    }
+
+    .rules-table-container {
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .rules-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .rules-table th {
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--glass-border);
+      position: sticky;
+      top: 0;
+      background: var(--panel);
+    }
+
+    .rules-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      font-size: 11px;
+    }
+
+    .rules-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .dry-run-badge {
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .dry-run-badge.dry { background: rgba(255, 149, 0, 0.15); color: var(--warning); }
+    .dry-run-badge.active { background: rgba(255, 69, 58, 0.2); color: var(--alert); }
+
+    /* ==========================================================================
+       7. CONFIRMATION MODAL & OFFLINE BANNER
+       ========================================================================== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(11, 14, 20, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--panel);
+      border: 1px solid var(--alert);
+      box-shadow: 0 0 32px var(--alert-glow);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      max-width: 480px;
+      width: 90%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-header {
+      color: var(--alert);
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-body {
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .offline-banner {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--alert);
+      color: #FFF;
+      padding: 10px 24px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 20px rgba(255, 69, 58, 0.5);
+      z-index: 99999;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .offline-banner.active {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Offline Banner -->
+  <div id="offlineBanner" class="offline-banner">
+    [!] API OFFLINE / RECONNECTING TO VANTACORE CORE...
+  </div>
+
+  <div class="app-container">
+
+    <!-- ==========================================================================
+       HEADER BAR
+       ========================================================================== -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8s0 .01 0 .01z"/></svg>
+        </div>
+        <div class="brand-title">VANTACORE <span>// OPS DASHBOARD</span></div>
+      </div>
+
+      <div class="header-meta">
+        <div id="targetPill" class="target-pill">TARGET: 192.168.1.100</div>
+        <div id="statusBadge" class="status-badge secure">
+          <span class="status-dot"></span>
+          <span id="statusText">SECURE</span>
+        </div>
+        <button id="btnRunRecon" class="btn btn-primary">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          TRIGGER RECON SCAN
+        </button>
+      </div>
+    </header>
+
+    <!-- ==========================================================================
+       TOP METRICS & SVG GAUGE
+       ========================================================================== -->
+    <section class="metrics-grid">
+      
+      <!-- Panel 1: SVG Severity Meter Gauge -->
+      <div class="panel">
+        <div class="panel-header">THREAT SEVERITY METRIC</div>
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 120 120">
+            <circle class="gauge-bg" cx="60" cy="60" r="55"></circle>
+            <circle id="gaugeMeter" class="gauge-meter" cx="60" cy="60" r="55"></circle>
+          </svg>
+          <div class="gauge-value">
+            <div id="gaugeNumber" class="gauge-number">0.0</div>
+            <div class="gauge-label">INDEX / 10.0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: Target Scanner Controls -->
+      <div class="panel">
+        <div class="panel-header">CORE TELEMETRY & SYSTEM HEALTH</div>
+        <div class="scan-controls">
+          <div class="input-group">
+            <label class="input-label" for="targetInput">Active Target IP / Domain</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="targetInput" class="input-field" value="192.168.1.100" placeholder="e.g. 8.8.8.8" style="flex:1;">
+              <button id="btnSetTarget" class="btn btn-primary">SET & SCAN</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 4px;">
+            <div class="input-label">System Mode & API Key Health</div>
+            <div id="demoModeBadge" style="font-size:10px; color: var(--warning); margin-top: 4px;">DEMO MODE ACTIVE</div>
+            <div id="keyHealthList" class="key-health-list">
+              <!-- Key tags populated dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 3: Threat Categories Grid -->
+      <div class="panel">
+        <div class="panel-header">INTELLIGENCE CATEGORIES</div>
+        <div id="categoryList" class="category-list">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==========================================================================
+       REAL-TIME EVENT STREAM
+       ========================================================================== -->
+    <section class="panel events-panel">
+      <div class="panel-header">
+        <span>REAL-TIME TELEMETRY FEED (<span id="eventCount">0</span>)</span>
+        <div class="events-controls">
+          <label style="font-size: 10px; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <input type="checkbox" id="chkAutoScroll" checked style="accent-color: var(--kali);"> AUTO-SCROLL
+          </label>
+        </div>
+      </div>
+      <div id="eventsStream" class="events-stream">
+        <!-- Event rows populated dynamically -->
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+       ON-DEMAND RECON INTEL DRAWER
+       ========================================================================== -->
+    <section class="recon-section">
+      <div class="panel">
+        <div class="panel-header">
+          <span>ON-DEMAND RECONNAISSANCE INTEL (6 MODULES)</span>
+          <span id="reconStatusLabel" style="font-size: 10px; color: var(--info);">STATUS: AWAITING SCAN</span>
+        </div>
+        <div id="reconGrid" class="recon-grid">
+          <!-- 6 Source Cards populated dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+       FIREWALL SECURITY CONTROL ENGINE
+       ========================================================================== -->
+    <section class="panel">
+      <div class="panel-header">FIREWALL SECURITY ENFORCEMENT ENGINE</div>
+      <div class="firewall-grid">
+        
+        <!-- Block Form -->
+        <div class="firewall-form">
+          <div class="input-group">
+            <label class="input-label" for="blockIpInput">IP Address to Block</label>
+            <input type="text" id="blockIpInput" class="input-field" placeholder="e.g. 198.51.100.55">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="blockReasonInput">Block Reason</label>
+            <input type="text" id="blockReasonInput" class="input-field" placeholder="e.g. Malicious Port Probe">
+          </div>
+
+          <label class="toggle-container">
+            <input type="checkbox" id="chkDryRun" class="toggle-input" checked>
+            <div class="toggle-switch"></div>
+            <span style="font-size: 11px; color: var(--text);">DRY-RUN MODE (Simulated)</span>
+          </label>
+
+          <button id="btnBlockIp" class="btn btn-warning" style="margin-top: 6px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm5.31-3.1L6.1 5.69C7.45 4.63 9.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z"/></svg>
+            ENFORCE FIREWALL BLOCK
+          </button>
+        </div>
+
+        <!-- Rules Table -->
+        <div class="rules-table-container">
+          <table class="rules-table">
+            <thead>
+              <tr>
+                <th>RULE ID</th>
+                <th>IP ADDRESS</th>
+                <th>REASON</th>
+                <th>TIME</th>
+                <th>MODE</th>
+              </tr>
+            </thead>
+            <tbody id="rulesTableBody">
+              <!-- Rules populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ==========================================================================
+     CONFIRMATION MODAL FOR ACTIVE FIREWALL BLOCK
+     ========================================================================== -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V10h2v2z"/></svg>
+        CRITICAL FIREWALL ACTION CONFIRMATION
+      </div>
+      <div id="modalBodyText" class="modal-body">
+        Warning: Dry-Run mode is UNCHECKED. You are about to enforce an ACTIVE block rule on IP address. This will drop all packet traffic immediately.
+      </div>
+      <div class="modal-footer">
+        <button id="btnModalCancel" class="btn">CANCEL</button>
+        <button id="btnModalConfirm" class="btn btn-warning" style="background: var(--alert); border-color: var(--alert); color:#FFF;">CONFIRM ACTIVE BLOCK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+     JAVASCRIPT: STRICT DOM SECURITY, FAST-POLLING, & INTERACTIVE RECON ENGINE
+     ========================================================================== -->
+  <script>
+    (function() {
+      'use strict';
+
+      // --- State Cache ---
+      let lastStatus = null;
+      let isFetchingStatus = false;
+      let pendingBlockRequest = null;
+
+      // --- DOM Cache ---
+      const dom = {
+        offlineBanner: document.getElementById('offlineBanner'),
+        targetPill: document.getElementById('targetPill'),
+        statusBadge: document.getElementById('statusBadge'),
+        statusText: document.getElementById('statusText'),
+        gaugeMeter: document.getElementById('gaugeMeter'),
+        gaugeNumber: document.getElementById('gaugeNumber'),
+        targetInput: document.getElementById('targetInput'),
+        btnSetTarget: document.getElementById('btnSetTarget'),
+        btnRunRecon: document.getElementById('btnRunRecon'),
+        demoModeBadge: document.getElementById('demoModeBadge'),
+        keyHealthList: document.getElementById('keyHealthList'),
+        categoryList: document.getElementById('categoryList'),
+        eventCount: document.getElementById('eventCount'),
+        chkAutoScroll: document.getElementById('chkAutoScroll'),
+        eventsStream: document.getElementById('eventsStream'),
+        reconStatusLabel: document.getElementById('reconStatusLabel'),
+        reconGrid: document.getElementById('reconGrid'),
+        blockIpInput: document.getElementById('blockIpInput'),
+        blockReasonInput: document.getElementById('blockReasonInput'),
+        chkDryRun: document.getElementById('chkDryRun'),
+        btnBlockIp: document.getElementById('btnBlockIp'),
+        rulesTableBody: document.getElementById('rulesTableBody'),
+        confirmModal: document.getElementById('confirmModal'),
+        modalBodyText: document.getElementById('modalBodyText'),
+        btnModalCancel: document.getElementById('btnModalCancel'),
+        btnModalConfirm: document.getElementById('btnModalConfirm')
+      };
+
+      // --- Helper: DOM Text Node Creator (Zero XSS) ---
+      function el(tag, className, textContent) {
+        const elem = document.createElement(tag);
+        if (className) elem.className = className;
+        if (textContent !== undefined && textContent !== null) {
+          elem.textContent = String(textContent);
+        }
+        return elem;
+      }
+
+      // --- Fast-Poll (GET /api/status - 3000ms) ---
+      async function pollStatus() {
+        if (isFetchingStatus) return;
+        isFetchingStatus = true;
+
+        try {
+          const res = await fetch('/api/status');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          
+          dom.offlineBanner.classList.remove('active');
+          renderStatus(data);
+        } catch (err) {
+          console.warn('[VantaCore] Status fetch failed:', err);
+          dom.offlineBanner.classList.add('active');
+        } finally {
+          isFetchingStatus = false;
+        }
+      }
+
+      // --- Render Fast-Poll Status ---
+      function renderStatus(data) {
+        lastStatus = data;
+
+        // 1. Status Badge & Target Pill
+        if (data.target) {
+          dom.targetPill.textContent = `TARGET: ${data.target}`;
+        }
+
+        const isSecure = data.status === 'SECURE';
+        dom.statusBadge.className = `status-badge ${isSecure ? 'secure' : 'under_attack'}`;
+        dom.statusText.textContent = isSecure ? 'SECURE' : 'UNDER ATTACK';
+
+        // 2. SVG Gauge Meter (0.0 to 10.0 scale)
+        const sev = typeof data.severity === 'number' ? data.severity : 0.0;
+        dom.gaugeNumber.textContent = sev.toFixed(1);
+
+        // Circumference = 2 * PI * 55 = 345.57
+        const totalCirc = 345.57;
+        const offset = totalCirc - (totalCirc * (sev / 10.0));
+        dom.gaugeMeter.style.strokeDashoffset = offset;
+
+        if (sev >= 7.0) {
+          dom.gaugeMeter.style.stroke = 'var(--alert)';
+        } else if (sev >= 4.0) {
+          dom.gaugeMeter.style.stroke = 'var(--warning)';
+        } else {
+          dom.gaugeMeter.style.stroke = 'var(--safe)';
+        }
+
+        // 3. System & Key Health
+        if (data.system) {
+          dom.demoModeBadge.textContent = data.system.demo_mode ? 'DEMO MODE ACTIVE (SIMULATED API)' : 'LIVE PRODUCTION MODE';
+          dom.demoModeBadge.style.color = data.system.demo_mode ? 'var(--warning)' : 'var(--safe)';
+
+          // Rebuild Key Health List safely
+          dom.keyHealthList.replaceChildren();
+          const missing = data.system.missing_keys || [];
+          if (missing.length === 0) {
+            dom.keyHealthList.appendChild(el('span', 'key-tag', 'ALL API KEYS PRESENT'));
+          } else {
+            missing.forEach(k => {
+              dom.keyHealthList.appendChild(el('span', 'key-tag', `MISSING: ${k}`));
+            });
+          }
+        }
+
+        // 4. Intelligence Categories
+        if (Array.isArray(data.categories)) {
+          dom.categoryList.replaceChildren();
+          data.categories.forEach(cat => {
+            const item = el('div', 'category-item');
+            
+            const info = el('div', 'category-info');
+            info.appendChild(el('span', 'category-name', cat.name));
+            info.appendChild(el('span', `category-badge ${cat.status || 'NOMINAL'}`, `${cat.status || 'NOMINAL'} (${cat.threat_count || 0})`));
+            
+            const barBg = el('div', 'category-bar-bg');
+            const barFill = el('div', 'category-bar-fill');
+            
+            // Calc fill percentage based on threat count
+            const pct = Math.min((cat.threat_count || 0) * 20, 100);
+            barFill.style.width = `${pct}%`;
+            if (cat.status === 'ALERT') barFill.style.backgroundColor = 'var(--alert)';
+            else if (cat.status === 'WARN') barFill.style.backgroundColor = 'var(--warning)';
+            else barFill.style.backgroundColor = 'var(--safe)';
+            
+            barBg.appendChild(barFill);
+            item.appendChild(info);
+            item.appendChild(barBg);
+            dom.categoryList.appendChild(item);
+          });
+        }
+
+        // 5. Events Feed
+        if (Array.isArray(data.events)) {
+          dom.eventCount.textContent = data.events.length;
+          dom.eventsStream.replaceChildren();
+          
+          data.events.forEach(evt => {
+            const row = el('div', 'event-row');
+            
+            row.appendChild(el('div', `event-level ${evt.level || 'info'}`));
+            row.appendChild(el('div', 'event-time', evt.time || ''));
+            row.appendChild(el('div', `event-tag ${evt.threat_type || 'SYSTEM'}`, evt.threat_type || 'SYSTEM'));
+            row.appendChild(el('div', 'event-msg', evt.message || ''));
+            
+            dom.eventsStream.appendChild(row);
+          });
+
+          if (dom.chkAutoScroll.checked) {
+            dom.eventsStream.scrollTop = 0;
+          }
+        }
+      }
+
+      // --- On-Demand Recon Fetch (GET /api/recon) ---
+      async function fetchRecon() {
+        dom.reconStatusLabel.textContent = 'STATUS: QUERYING INTEL SOURCES...';
+        dom.reconStatusLabel.style.color = 'var(--warning)';
+
+        try {
+          const res = await fetch('/api/recon');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          renderRecon(data);
+          dom.reconStatusLabel.textContent = 'STATUS: RECON INTEL FRESH';
+          dom.reconStatusLabel.style.color = 'var(--safe)';
+        } catch (err) {
+          console.error('[VantaCore] Recon fetch error:', err);
+          dom.reconStatusLabel.textContent = 'STATUS: RECON FETCH FAILED';
+          dom.reconStatusLabel.style.color = 'var(--alert)';
+        }
+      }
+
+      // --- Trigger New Scan (POST /api/scan/trigger) ---
+      async function triggerScan(target) {
+        dom.btnRunRecon.disabled = true;
+        dom.btnRunRecon.textContent = 'SCANNING...';
+
+        try {
+          const res = await fetch('/api/scan/trigger', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target: target })
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          
+          await pollStatus();
+          await fetchRecon();
+        } catch (err) {
+          console.error('[VantaCore] Trigger scan error:', err);
+        } finally {
+          dom.btnRunRecon.disabled = false;
+          dom.btnRunRecon.textContent = 'TRIGGER RECON SCAN';
+        }
+      }
+
+      // --- Render Recon Cards (6 Modules) ---
+      function renderRecon(data) {
+        dom.reconGrid.replaceChildren();
+
+        if (!data || data.status === 'no_scan_yet' || !data.recon) {
+          const emptyCard = el('div', 'recon-card', '');
+          emptyCard.style.gridColumn = '1 / -1';
+          emptyCard.appendChild(el('div', 'not-scanned-state', 'No reconnaissance scan performed yet. Click "TRIGGER RECON SCAN" to gather threat intelligence.'));
+          dom.reconGrid.appendChild(emptyCard);
+          return;
+        }
+
+        const r = data.recon;
+
+        // 1. Shodan Card
+        dom.reconGrid.appendChild(createModuleCard(
+          'SHODAN INTERNET DB',
+          r.shodan,
+          [
+            ['Org / Host', r.shodan?.org || 'N/A'],
+            ['Open Ports', (r.shodan?.open_ports || []).join(', ') || 'None Detected'],
+            ['Vulnerabilities', (r.shodan?.vulns || []).join(', ') || 'Clean']
+          ]
+        ));
+
+        // 2. VirusTotal Card
+        dom.reconGrid.appendChild(createModuleCard(
+          'VIRUSTOTAL V3',
+          r.virustotal,
+          [
+            ['Malicious Engines', `${r.virustotal?.malicious_engines || 0} / ${r.virustotal?.total_engines || 0}`],
+            ['Categories', (r.virustotal?.categories || []).join(', ') || 'None']
+          ]
+        ));
+
+        // 3. AbuseIPDB Card
+        dom.reconGrid.appendChild(createModuleCard(
+          'ABUSEIPDB REPUTATION',
+          r.abuseipdb,
+          [
+            ['Abuse Confidence', `${r.abuseipdb?.abuse_score || 0}%`],
+            ['Total Reports', r.abuseipdb?.total_reports || 0],
+            ['Country', r.abuseipdb?.country || 'N/A']
+          ]
+        ));
+
+        // 4. AlienVault OTX Card
+        dom.reconGrid.appendChild(createModuleCard(
+          'ALIENVAULT OTX',
+          r.otx,
+          [
+            ['Matched Pulses', r.otx?.pulse_count || 0],
+            ['Threat Tags', (r.otx?.tags || []).join(', ') || 'None']
+          ]
+        ));
+
+        // 5. IPInfo Card
+        dom.reconGrid.appendChild(createModuleCard(
+          'IPINFO GEOLOCATION',
+          r.ipinfo,
+          [
+            ['Location', `${r.ipinfo?.city || ''}, ${r.ipinfo?.region || ''} (${r.ipinfo?.country || ''})`],
+            ['ASN / Org', r.ipinfo?.org || 'N/A']
+          ]
+        ));
+
+        // 6. NVD Single CVE Card (Special Multi-State Handling)
+        const nvdCard = el('div', 'recon-card');
+        const nvdHeader = el('div', 'recon-card-header');
+        nvdHeader.appendChild(el('div', 'recon-source-title', 'NIST NVD DATABASE'));
+        const nvdDot = el('div', `recon-status-dot ${r.nvd?.ok ? 'ok' : 'fail'}`);
+        nvdHeader.appendChild(nvdDot);
+        nvdCard.appendChild(nvdHeader);
+
+        const nvdMetrics = el('div', 'recon-metrics');
+        
+        if (!r.nvd?.ok) {
+          // Source Lookup Failure State
+          const failMsg = el('div', 'raw-note', r.nvd?.raw_note || 'NVD lookup failed or unavailable.');
+          failMsg.style.borderColor = 'var(--alert)';
+          nvdMetrics.appendChild(failMsg);
+        } else if (!r.nvd.cve_id) {
+          // Clean State: No CVE surfaced by Shodan
+          const cleanBox = el('div', 'nvd-clean-state', 'No CVE surfaced by Shodan during this scan.');
+          nvdMetrics.appendChild(cleanBox);
+          if (r.nvd.raw_note) {
+            nvdMetrics.appendChild(el('div', 'raw-note', r.nvd.raw_note));
+          }
+        } else {
+          // CVE Found State
+          const row1 = el('div', 'recon-metric-row');
+          row1.appendChild(el('span', 'recon-metric-label', 'CVE Identifier'));
+          row1.appendChild(el('span', 'recon-metric-val', r.nvd.cve_id));
+          row1.children[1].style.color = 'var(--alert)';
+          nvdMetrics.appendChild(row1);
+
+          const row2 = el('div', 'recon-metric-row');
+          row2.appendChild(el('span', 'recon-metric-label', 'CVSS Severity Score'));
+          row2.appendChild(el('span', 'recon-metric-val', `${r.nvd.cvss_score} / 10.0`));
+          nvdMetrics.appendChild(row2);
+
+          if (r.nvd.description) {
+            const desc = el('div', 'raw-note', r.nvd.description);
+            desc.style.borderColor = 'var(--warning)';
+            nvdMetrics.appendChild(desc);
+          }
+        }
+
+        nvdCard.appendChild(nvdMetrics);
+        dom.reconGrid.appendChild(nvdCard);
+      }
+
+      // Helper to build standard Recon Card safely
+      function createModuleCard(title, dataObj, metricsArray) {
+        const card = el('div', 'recon-card');
+        
+        const header = el('div', 'recon-card-header');
+        header.appendChild(el('div', 'recon-source-title', title));
+        const dot = el('div', `recon-status-dot ${dataObj?.ok ? 'ok' : 'fail'}`);
+        header.appendChild(dot);
+        card.appendChild(header);
+
+        const metrics = el('div', 'recon-metrics');
+        if (metricsArray) {
+          metricsArray.forEach(([lbl, val]) => {
+            const row = el('div', 'recon-metric-row');
+            row.appendChild(el('span', 'recon-metric-label', lbl));
+            row.appendChild(el('span', 'recon-metric-val', val));
+            metrics.appendChild(row);
+          });
+        }
+
+        if (dataObj?.raw_note) {
+          metrics.appendChild(el('div', 'raw-note', dataObj.raw_note));
+        }
+
+        card.appendChild(metrics);
+        return card;
+      }
+
+      // --- Firewall Management (GET /api/firewall & POST /api/firewall/block) ---
+      async function pollFirewall() {
+        try {
+          const res = await fetch('/api/firewall');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          renderFirewallRules(data.blocked_ips || []);
+        } catch (err) {
+          console.warn('[VantaCore] Firewall fetch failed:', err);
+        }
+      }
+
+      function renderFirewallRules(rules) {
+        dom.rulesTableBody.replaceChildren();
+
+        if (rules.length === 0) {
+          const tr = el('tr');
+          const td = el('td', '', 'No blocked IPs in firewall table.');
+          td.colSpan = 5;
+          td.style.textAlign = 'center';
+          td.style.color = 'var(--subtle)';
+          tr.appendChild(td);
+          dom.rulesTableBody.appendChild(tr);
+          return;
+        }
+
+        rules.forEach(rule => {
+          const tr = el('tr');
+          tr.appendChild(el('td', '', rule.rule_id));
+          tr.appendChild(el('td', '', rule.ip));
+          tr.children[1].style.fontWeight = '700';
+          tr.appendChild(el('td', '', rule.reason));
+          tr.appendChild(el('td', '', rule.action_time));
+          
+          const tdBadge = el('td');
+          const badgeClass = rule.dry_run ? 'dry-run-badge dry' : 'dry-run-badge active';
+          const badgeText = rule.dry_run ? 'DRY-RUN' : 'ACTIVE';
+          tdBadge.appendChild(el('span', badgeClass, badgeText));
+          tr.appendChild(tdBadge);
+
+          dom.rulesTableBody.appendChild(tr);
+        });
+      }
+
+      async function submitBlockRequest(ip, reason, dryRun) {
+        try {
+          const res = await fetch('/api/firewall/block', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip: ip, reason: reason, dry_run: dryRun })
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (data.blocked_ips) {
+            renderFirewallRules(data.blocked_ips);
+          }
+          dom.blockIpInput.value = '';
+          dom.blockReasonInput.value = '';
+          await pollStatus();
+        } catch (err) {
+          console.error('[VantaCore] Block IP submit failed:', err);
+        }
+      }
+
+      // --- Event Listeners & Modal Handler ---
+      dom.btnSetTarget.addEventListener('click', () => {
+        const val = dom.targetInput.value.trim();
+        if (val) {
+          triggerScan(val);
+        }
+      });
+
+      dom.btnRunRecon.addEventListener('click', () => {
+        const val = dom.targetInput.value.trim() || '192.168.1.100';
+        triggerScan(val);
+      });
+
+      dom.btnBlockIp.addEventListener('click', () => {
+        const ip = dom.blockIpInput.value.trim();
+        const reason = dom.blockReasonInput.value.trim() || 'Manual dashboard rule';
+        const dryRun = dom.chkDryRun.checked;
+
+        if (!ip) {
+          alert('Please enter a valid IP address to block.');
+          return;
+        }
+
+        if (!dryRun) {
+          // Trigger Security Confirmation Modal for ACTIVE block
+          pendingBlockRequest = { ip, reason, dryRun: false };
+          dom.modalBodyText.textContent = `CRITICAL WARNING: Dry-Run mode is UNCHECKED. You are about to block IP address "${ip}" in ACTIVE ENFORCEMENT mode. All network packets from this target will be dropped immediately.`;
+          dom.confirmModal.classList.add('active');
+        } else {
+          // Direct execution for Dry-Run
+          submitBlockRequest(ip, reason, true);
+        }
+      });
+
+      dom.btnModalCancel.addEventListener('click', () => {
+        pendingBlockRequest = null;
+        dom.confirmModal.classList.remove('active');
+      });
+
+      dom.btnModalConfirm.addEventListener('click', () => {
+        if (pendingBlockRequest) {
+          submitBlockRequest(pendingBlockRequest.ip, pendingBlockRequest.reason, false);
+          pendingBlockRequest = null;
+        }
+        dom.confirmModal.classList.remove('active');
+      });
+
+      // --- Initialization & Loop Setup ---
+      pollStatus();
+      pollFirewall();
+      fetchRecon();
+
+      // Fast-poll status loop: 3000ms
+      setInterval(pollStatus, 3000);
+
+    })();
+  </script>
+</body>
+</html>
